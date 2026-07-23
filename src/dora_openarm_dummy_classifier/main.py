@@ -20,51 +20,29 @@ import random
 
 
 def main():
-    """Mimics classifier."""
-    phase_names = [
-        "Outside",
-        "Picking",
-        "Inside",
-        "Rescue",
-        "Dropped",
-    ]
-
+    """Mimics dora-openarm-classifier."""
     node = dora.Node()
+    frame = 0
     for event in node:
         if event["type"] != "INPUT":
             continue
 
         # Main process
         event_id = event["id"]
-        if event_id != "observation":
-            # Run with the interval of the observation
+        if event_id != "image":
             continue
 
-        phase_name = random.choice(phase_names)
-        success = phase_name == phase_names[0]
-        phase_id = phase_names.index(phase_name)
-        confidence = 0.9
-        status = "SUCCESS" if success else "FAILURE"
-
-        # Send outputs
-        # - phase      Int32: 0=Outside, 1=Picking, 2=Inside, 3=Rescue, 4=Dropped
-        # - phase_name String: "Outside", "Picking", "Inside", "Rescue", "Dropped"
-        # - confidence Float32: Model confidence [0.0-1.0]
-        # - success    Boolean: Task completed successfully
-        # - status     String: "SUCCESS" or "FAILURE"
-        arrays = []
-        names = []
-        arrays.append(pa.array([phase_id], type=pa.int32()))
-        names.append("phase")
-        arrays.append(pa.array([phase_name], type=pa.string()))
-        names.append("phase_name")
-        arrays.append(pa.array([confidence], type=pa.float32()))
-        names.append("confidence")
-        arrays.append(pa.array([success], type=pa.bool_()))
-        names.append("success")
-        arrays.append(pa.array([status], type=pa.string()))
-        names.append("status")
-        node.send_output("result", pa.StructArray.from_arrays(arrays, names))
+        frame += 1
+        score = random.random()
+        if score > 0.7:
+            verdict = "SUCCESS"
+        else:
+            verdict = "FAIL"
+        node.send_output(
+            "result",
+            pa.array([score], type=pa.float32()),
+            metadata={"verdict": verdict, "frame": frame},
+        )
 
 
 if __name__ == "__main__":
